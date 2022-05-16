@@ -116,7 +116,7 @@ class ChatListBuilder<W> extends StatefulWidget {
 }
 
 class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
-  late Key _centerKsy;
+  late Key _centerKey;
 
   final List<S> _oldData = [];
   final List<S> _newData = [];
@@ -124,6 +124,7 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
   List<S> _cacheNewData = [];
   final Duration _anmationDuration = const Duration(milliseconds: 100);
   bool _isScollToBottom = false;
+  bool _isFrameCallbackAdd = false;
 
   bool _isLoadHistory = false;
   bool _isHasMore = true;
@@ -131,7 +132,7 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
   @override
   void initState() {
     widget.controller._bindState(this);
-    _centerKsy = UniqueKey();
+    _centerKey = UniqueKey();
     _newData.addAll(widget.intMeaasge.reversed);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       widget.controller.scrollController
@@ -169,16 +170,13 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
   }
 
   void _addCacheMessages() {
-    if (!_isScollToBottom) {
+    if (!_isScollToBottom && _cacheNewData.isNotEmpty) {
       final data = _cacheNewData;
       _cacheNewData = [];
       setState(() {
         _newData.addAll(data);
       });
-      print(data.length);
-      print(widget.controller.scrollController.position.pixels);
-      print(widget.controller.scrollController.position.maxScrollExtent);
-      _addMessageEffect();
+      _runFrameCallback();
     } else {
       if (_cacheNewData.isNotEmpty) {
         Future.delayed(_anmationDuration, _addCacheMessages);
@@ -202,22 +200,29 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
     setState(() {});
   }
 
-  void _addMessageEffect() {
-    if (widget.controller.scrollController.position.maxScrollExtent -
-            widget.controller.scrollController.position.pixels <
-        20) {
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        _isScollToBottom = true;
-        widget.controller.scrollController
-            .animateTo(
-          widget.controller.scrollController.position.maxScrollExtent,
-          duration: _anmationDuration,
-          curve: Curves.linear,
-        )
-            .then((value) {
-          _isScollToBottom = false;
+  void _scrollToEnd() {
+    _isScollToBottom = true;
+    _isFrameCallbackAdd = false;
+    widget.controller.scrollController
+        .animateTo(
+      widget.controller.scrollController.position.maxScrollExtent,
+      duration: _anmationDuration,
+      curve: Curves.linear,
+    )
+        .then((value) {
+      _isScollToBottom = false;
+    });
+  }
+
+  void _runFrameCallback() {
+    if (widget.controller.scrollController.position.maxScrollExtent ==
+        widget.controller.scrollController.position.pixels) {
+      if (!_isFrameCallbackAdd) {
+        _isFrameCallbackAdd = true;
+        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+          _scrollToEnd();
         });
-      });
+      }
     }
   }
 
@@ -229,7 +234,7 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
           physics: const BouncingScrollPhysics(),
           cacheExtent: 200,
           controller: widget.controller.scrollController,
-          center: _centerKsy,
+          center: _centerKey,
           slivers: [
             SliverList(
               delegate: SliverChildBuilderDelegate(
@@ -239,12 +244,12 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
                   } else {
                     if (_isHasMore) {
                       _loadHistory();
-                      return const Center(
-                        child: _LoadingHistory(),
+                      return Center(
+                        child: widget.loadingWidget ?? const _LoadingHistory(),
                       );
                     } else {
-                      return const Center(
-                        child: _NoMoreHistory(),
+                      return Center(
+                        child: widget.noMoreWidget ?? const _NoMoreHistory(),
                       );
                     }
                   }
@@ -252,11 +257,8 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
                 childCount: _oldData.length + 1,
               ),
             ),
-            SliverPadding(
-              padding: EdgeInsets.zero,
-              key: _centerKsy,
-            ),
             SliverList(
+              key: _centerKey,
               delegate: SliverChildBuilderDelegate(
                 (BuildContext context, int index) {
                   return widget.itemBuilder(context, _newData[index]);
