@@ -71,12 +71,6 @@ class ChatListController<C> {
 /// [ChatListBuilder]是一个极其简单的组件，它并不负责任何UI的生成
 /// 它只负责列表的滚动行为
 class ChatListBuilder<W> extends StatefulWidget {
-  /// When you first enter the page with message content, you need to pay
-  /// attention to the sorting of the list in descending chronological order
-  ///
-  /// 首次进入页面的消息内容，需要注意的时，列表的排序需要是
-  /// 按照时间降序
-  final List<W> intMeaasge;
   final ChatListController<W> controller;
 
   final Widget Function(BuildContext, W) itemBuilder;
@@ -91,6 +85,11 @@ class ChatListBuilder<W> extends StatefulWidget {
   /// 需要是按照时间降序
   final Future<LoadHistoryResponse<W>> Function() loadHistory;
 
+  /// Loading widget when you first enter the page
+  ///
+  /// 首次进入页面时的loading widget
+  final Widget? initloadingWidget;
+
   /// The widget displayed when loading the history message
   ///
   /// 加载历史消息时显示的widget
@@ -101,14 +100,22 @@ class ChatListBuilder<W> extends StatefulWidget {
   /// 没有更多的历史消息时显示的widget
   final Widget? noMoreWidget;
 
+  /// The background color of loading when entering the page for the first time,
+  ///  it is recommended that it should be the same as the background color of
+  ///  the page
+  ///
+  /// 首次进入页面时的loading的背景颜色，建议应与页面的背景颜色相同
+  final Color loadingBackgroundColor;
+
   const ChatListBuilder({
     super.key,
-    required this.intMeaasge,
     required this.controller,
     required this.itemBuilder,
     required this.loadHistory,
     this.loadingWidget,
+    this.initloadingWidget,
     this.noMoreWidget,
+    required this.loadingBackgroundColor,
   });
 
   @override
@@ -128,15 +135,28 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
 
   bool _isLoadHistory = false;
   bool _isHasMore = true;
+  bool _isFirstBuildFinsh = false;
 
   @override
   void initState() {
     widget.controller._bindState(this);
     _centerKey = UniqueKey();
-    _newData.addAll(widget.intMeaasge.reversed);
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      widget.controller.scrollController
-          .jumpTo(widget.controller.scrollController.position.maxScrollExtent);
+    // _newData.addAll(widget.intMeaasge.reversed);
+    widget.loadHistory().then((value) {
+      if (mounted) {
+        setState(() {
+          _isHasMore = value.isHasMore;
+          _newData.addAll(value.data.reversed);
+          _isLoadHistory = false;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+          widget.controller.scrollController.jumpTo(
+              widget.controller.scrollController.position.maxScrollExtent);
+          setState(() {
+            _isFirstBuildFinsh = true;
+          });
+        });
+      }
     });
     super.initState();
   }
@@ -151,11 +171,13 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
     if (_isLoadHistory) return;
     _isLoadHistory = true;
     widget.loadHistory().then((value) {
-      setState(() {
-        _isHasMore = value.isHasMore;
-        _oldData.addAll(value.data);
-        _isLoadHistory = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isHasMore = value.isHasMore;
+          _oldData.addAll(value.data);
+          _isLoadHistory = false;
+        });
+      }
     });
   }
 
@@ -242,6 +264,7 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
                   if (index < _oldData.length) {
                     return widget.itemBuilder(context, _oldData[index]);
                   } else {
+                    if (!_isFirstBuildFinsh) return Container();
                     if (_isHasMore) {
                       _loadHistory();
                       return Center(
@@ -268,6 +291,19 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
             ),
           ],
         ),
+        if (!_isFirstBuildFinsh)
+          Positioned(
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: widget.loadingBackgroundColor,
+              child: Center(
+                child: widget.initloadingWidget ?? const _LoadingHistory(),
+              ),
+            ),
+          ),
       ],
     );
   }

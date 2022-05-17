@@ -52,8 +52,12 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class Message {
-  final String text = generateWordPairs().take(1).first.asCamelCase;
+  final int;
+  Message(this.int);
+  final String _text = generateWordPairs().take(1).first.asCamelCase;
   final bool isMeSend = Random().nextBool();
+
+  String get text => int.toString() + _text;
 }
 
 class ChatPage extends StatelessWidget {
@@ -67,15 +71,15 @@ class ChatPage extends StatelessWidget {
         title: const Text("Chat Page"),
       ),
       body: ChatListBuilder<Message>(
-        intMeaasge: List.generate(5, (index) => Message()),
         loadHistory: () async {
           return Future.delayed(const Duration(seconds: 2), () {
             return LoadHistoryResponse(
               isHasMore: true,
-              data: List.generate(20, (index) => Message()),
+              data: List.generate(30, (index) => Message(index)),
             );
           });
         },
+        loadingBackgroundColor: Colors.white,
         itemBuilder: (_, element) {
           if (element.isMeSend) {
             return Row(
@@ -116,7 +120,7 @@ class ChatPage extends StatelessWidget {
             // List.generate(10, (index) => Message()).forEach((element) {
             //   controller.addNewMessage(element);
             // });
-            controller.addNewMessage(Message());
+            controller.addNewMessage(Message(999));
             // controller.addNewMessages(List.generate(100, (index) => Message()));
           },
           child: const Text('New Message'),
