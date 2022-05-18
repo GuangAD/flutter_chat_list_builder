@@ -73,6 +73,8 @@ class ChatListController<C> {
 class ChatListBuilder<W> extends StatefulWidget {
   final ChatListController<W> controller;
 
+  final List<W>? intMeaasge;
+
   final Widget Function(BuildContext, W) itemBuilder;
 
   /// To load the history, you need to return a [bool] value of
@@ -105,7 +107,7 @@ class ChatListBuilder<W> extends StatefulWidget {
   ///  the page
   ///
   /// 首次进入页面时的loading的背景颜色，建议应与页面的背景颜色相同
-  final Color loadingBackgroundColor;
+  final Color? loadingBackgroundColor;
 
   const ChatListBuilder({
     super.key,
@@ -115,8 +117,21 @@ class ChatListBuilder<W> extends StatefulWidget {
     this.loadingWidget,
     this.initloadingWidget,
     this.noMoreWidget,
-    required this.loadingBackgroundColor,
-  });
+    required Color loadingBackgroundColor,
+  })  : loadingBackgroundColor = loadingBackgroundColor,
+        intMeaasge = null;
+
+  const ChatListBuilder.initMsg({
+    super.key,
+    required this.controller,
+    required this.itemBuilder,
+    required this.loadHistory,
+    this.loadingWidget,
+    this.noMoreWidget,
+    required List<W> intMeaasge,
+  })  : intMeaasge = intMeaasge,
+        initloadingWidget = null,
+        loadingBackgroundColor = null;
 
   @override
   State<ChatListBuilder<W>> createState() => _ChatListBuilderState<W>();
@@ -135,29 +150,38 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
 
   bool _isLoadHistory = false;
   bool _isHasMore = true;
-  bool _isFirstBuildFinsh = false;
+  bool _isHasMessage = false;
 
   @override
   void initState() {
     widget.controller._bindState(this);
     _centerKey = UniqueKey();
-    // _newData.addAll(widget.intMeaasge.reversed);
-    widget.loadHistory().then((value) {
-      if (mounted) {
-        setState(() {
-          _isHasMore = value.isHasMore;
-          _newData.addAll(value.data.reversed);
-          _isLoadHistory = false;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-          widget.controller.scrollController.jumpTo(
-              widget.controller.scrollController.position.maxScrollExtent);
+    if (widget.intMeaasge != null) {
+      _newData.addAll(widget.intMeaasge!.reversed);
+      _isHasMessage = true;
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        widget.controller.scrollController.jumpTo(
+            widget.controller.scrollController.position.maxScrollExtent);
+      });
+    } else {
+      _isLoadHistory = true;
+      widget.loadHistory().then((value) {
+        if (mounted) {
           setState(() {
-            _isFirstBuildFinsh = true;
+            _isHasMore = value.isHasMore;
+            _newData.addAll(value.data.reversed);
+            _isLoadHistory = false;
           });
-        });
-      }
-    });
+          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+            widget.controller.scrollController.jumpTo(
+                widget.controller.scrollController.position.maxScrollExtent);
+            setState(() {
+              _isHasMessage = true;
+            });
+          });
+        }
+      });
+    }
     super.initState();
   }
 
@@ -264,7 +288,7 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
                   if (index < _oldData.length) {
                     return widget.itemBuilder(context, _oldData[index]);
                   } else {
-                    if (!_isFirstBuildFinsh) return Container();
+                    if (!_isHasMessage) return Container();
                     if (_isHasMore) {
                       _loadHistory();
                       return Center(
@@ -291,7 +315,7 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
             ),
           ],
         ),
-        if (!_isFirstBuildFinsh)
+        if (!_isHasMessage)
           Positioned(
             top: 0,
             bottom: 0,
