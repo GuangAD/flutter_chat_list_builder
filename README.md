@@ -7,6 +7,9 @@ This package is not responsible for the style of the UI such as bubbles, it is o
 - Scroll down load history
 - When not at the bottom of the list, adding a new message remains unchanged at the current reading position
 
+
+![chat_list_load](https://github.com/GuangAD/flutter_chat_list_builder/blob/main/screen/chat_list.gif?raw=true)
+
 ## Getting started
 
 

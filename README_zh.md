@@ -7,6 +7,7 @@
 - 向下滚动加载历史记录
 - 当不处于列表最下面时，添加新消息保持当前阅读位置不变
 
+![chat_list_load](https://github.com/GuangAD/flutter_chat_list_builder/blob/main/screen/chat_list.gif?raw=true)
 ## Getting started
 
 ```dart
