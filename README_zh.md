@@ -1,24 +1,10 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
-
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages). 
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages). 
--->
-
 一个用于构建聊天信息列表的flutter package
 
-这个包不负责气泡的样式，它只负责列表的滚动行为。
+这个包不负责气泡等UI的样式，它只负责列表的滚动行为。
 
 ## Features
 
 - 向下滚动加载历史记录
-- 添加新消息
 - 当不处于列表最下面时，添加新消息保持当前阅读位置不变
 
 ## Getting started
@@ -29,15 +15,85 @@ import 'package:flutter_chat_list_builder/flutter_chat_list_builder.dart';
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
-
 ```dart
-const like = 'sample';
+
+class Message {
+  final int ind;
+  Message(this.ind);
+  final String _text = generateWordPairs().take(1).first.asCamelCase;
+  final bool isMeSend = Random().nextBool();
+
+  String get text => ind.toString() + _text;
+}
+
+class ChatPage extends StatelessWidget {
+  const ChatPage({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    ChatListController<Message> controller = ChatListController<Message>();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Chat Page"),
+      ),
+      body: ChatListBuilder<Message>(
+        loadHistory: () async {
+          return Future.delayed(const Duration(seconds: 2), () {
+            return LoadHistoryResponse(
+              isHasMore: true,
+              data: List.generate(30, (index) => Message(index)),
+            );
+          });
+        },
+        loadingBackgroundColor: Colors.white,
+        itemBuilder: (_, element) {
+          if (element.isMeSend) {
+            return Row(
+              textDirection: TextDirection.rtl,
+              children: [
+                Container(
+                  margin: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.green[400],
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(element.text),
+                )
+              ],
+            );
+          } else {
+            return Row(
+              children: [
+                Container(
+                  margin: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.yellow[400],
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(element.text),
+                )
+              ],
+            );
+          }
+        },
+        controller: controller,
+      ),
+      persistentFooterButtons: [
+        ElevatedButton(
+          onPressed: () {
+            // List.generate(10, (index) => Message()).forEach((element) {
+            //   controller.addNewMessage(element);
+            // });
+            controller.addNewMessage(Message(999));
+            // controller.addNewMessages(List.generate(100, (index) => Message()));
+          },
+          child: const Text('New Message'),
+        ),
+      ],
+    );
+  }
+}
 ```
 
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.

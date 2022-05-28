@@ -63,12 +63,12 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class Message {
-  final int;
-  Message(this.int);
+  final int ind;
+  Message(this.ind);
   final String _text = generateWordPairs().take(1).first.asCamelCase;
   final bool isMeSend = Random().nextBool();
 
-  String get text => int.toString() + _text;
+  String get text => ind.toString() + _text;
 }
 
 class ChatPage extends StatelessWidget {

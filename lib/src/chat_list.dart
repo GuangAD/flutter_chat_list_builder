@@ -68,11 +68,17 @@ class ChatListController<C> {
 /// for any UI generation. It is only responsible for the scrolling
 /// behavior of the list
 ///
+///
 /// [ChatListBuilder]是一个极其简单的组件，它并不负责任何UI的生成
 /// 它只负责列表的滚动行为
 class ChatListBuilder<W> extends StatefulWidget {
   final ChatListController<W> controller;
 
+  /// When you first enter the page with message content, you need to pay
+  /// attention to the sorting of the list in descending chronological order
+  ///
+  /// 首次进入页面的消息内容，需要注意的时，列表的排序需要是
+  /// 按照时间降序
   final List<W>? intMeaasge;
 
   final Widget Function(BuildContext, W) itemBuilder;
@@ -117,9 +123,8 @@ class ChatListBuilder<W> extends StatefulWidget {
     this.loadingWidget,
     this.initloadingWidget,
     this.noMoreWidget,
-    required Color loadingBackgroundColor,
-  })  : loadingBackgroundColor = loadingBackgroundColor,
-        intMeaasge = null;
+    required Color this.loadingBackgroundColor,
+  }) : intMeaasge = null;
 
   const ChatListBuilder.initMsg({
     super.key,
@@ -128,9 +133,8 @@ class ChatListBuilder<W> extends StatefulWidget {
     required this.loadHistory,
     this.loadingWidget,
     this.noMoreWidget,
-    required List<W> intMeaasge,
-  })  : intMeaasge = intMeaasge,
-        initloadingWidget = null,
+    required List<W> this.intMeaasge,
+  })  : initloadingWidget = null,
         loadingBackgroundColor = null;
 
   @override
