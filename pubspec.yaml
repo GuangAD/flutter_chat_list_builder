@@ -1,7 +1,7 @@
 name: flutter_chat_list_builder
 description: 'A package that is responsible for scrolling the chat page'
 repository: https://github.com/GuangAD/flutter_chat_list_builder
-version: 0.0.1
+version: 0.0.2
 homepage:
 
 environment:
