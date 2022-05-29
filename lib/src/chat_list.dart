@@ -282,7 +282,6 @@ class _ChatListBuilderState<S> extends State<ChatListBuilder<S>> {
       children: [
         CustomScrollView(
           physics: const BouncingScrollPhysics(),
-          cacheExtent: 200,
           controller: widget.controller.scrollController,
           center: _centerKey,
           slivers: [
